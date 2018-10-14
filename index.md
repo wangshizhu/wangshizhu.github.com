@@ -1,6 +1,6 @@
 ---
-layout: page
-title: Hello World!
+layout: main_layout
+title: 王仕柱的主页
 tagline: Supporting tagline
 ---
 {% include JB/setup %}

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+  	<title>{{ page.title }}</title>
+  	<link href='{{ ASSET_PATH }}/css/screen.css' rel="stylesheet" media="all">
+</head>
+<body class="wrap">
+	<section class="docs">
+		<div class="grid">
+			<div class="docs-nav-mobile unit whole show-on-mobiles">
+				<select onchange="if (this.value) window.location.href=this.value">
+					<option value>Navigate this docs...</option>
+
+					<optgroup label="技术">
+						<option value="https://www.baidu.com/">C++</option>
+					</optgroup>
+
+					<optgroup label="读书">
+						<option value="https://www.baidu.com">癌症 新知</option>
+					</optgroup>
+					
+				</select>
+			</div>
+
+			<div class="unit one-fifth hide-on-mobiles">
+				<aside>
+					<h4>关于我</h4>
+					<h1>
+						<a href="/">
+							<img src="{{ ASSET_PATH }}/img/son.jpg" width="135" height="180" alt>
+						</a>
+					</h1>
+					
+				</aside>
+
+			</div>
+
+			<div class="unit three-fifths">
+				<div>
+					{{ content }}
+				</div>
+			</div>
+
+			<div class="unit one-fifth hide-on-mobiles">
+				<aside>
+					<h4>技术</h4>
+					<ul>
+						<li class>
+							<a href="https://www.baidu.com/">C++</a>
+						</li>
+						<li class>
+							<a href="https://www.baidu.com/">python</a>
+						</li>
+						<li class>
+							<a href="https://www.baidu.com/">mysql</a>
+						</li>
+						<li class>
+							<a href="https://www.baidu.com/">redis</a>
+						</li>
+						<li class>
+							<a href="https://www.baidu.com/">算法</a>
+						</li>
+						<li class>
+							<a href="https://www.baidu.com/">数据结构</a>
+						</li>
+					</ul>
+
+					<h4>读书</h4>
+					<ul>
+						<li class>
+							<a href="https://www.baidu.com/">癌症 新知</a>
+						</li>
+					</ul>
+				</aside>
+			</div>
+		</div>
+	</section>
+</body>
+</html>
