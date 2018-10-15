@@ -2,18 +2,23 @@
 	<div class="grid">
 		<div class="unit three-quarters">
 			<div>
+				<h4>{{ page.title }}</h4>
 				{{ content }}
 			</div>
 		</div>
 		<div class="unit one-quarter hide-on-mobiles">
 			<aside>
-				<!-- {% for category in site.categories %} 
-  					<h2 id="{{ category[0] }}-ref">{{ category[0] | join: "/" }}</h2>
-  					<ul>
-    					{% assign pages_list = category[1] %}  
-    					{% include JB/pages_list %}
-  					</ul>
-				{% endfor %}-->
+				{% for one in site.categories %}
+					{% assign src = one[0] %}
+					{% assign des = page.category %}
+					{% if src == des %}
+						<h4 id="{{ one[0] }}-ref">{{ one[0] | join: "/" }}</h4>
+	  					<ul>
+	    					{% assign pages_list = one[1] %}  
+	    					{% include JB/pages_list %}
+	  					</ul>
+					{% endif %}
+				{% endfor %}
 			</aside>
 		</div>
 	</div>

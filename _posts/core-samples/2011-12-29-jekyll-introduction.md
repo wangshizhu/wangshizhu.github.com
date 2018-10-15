@@ -1,6 +1,6 @@
 ---
-layout: post
-category : lessons
+layout: second_template
+category : Python
 tagline: "Supporting tagline"
 tags : [intro, beginner, jekyll, tutorial]
 ---
