@@ -9,11 +9,12 @@ highlighter: pygments
 # so be sure to set them if your theme uses them.
 #
 title : 王仕柱
+discr: 一点一滴
 tagline: Site Tagline
 author :
-  name : Name Lastname
-  email : blah@email.test
-  github : username
+  name : 王仕柱
+  email : wangshitong163@163.com
+  github : wangshizhu
   twitter : username
   feedburner : feedname
 

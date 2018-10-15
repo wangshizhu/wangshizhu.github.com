@@ -54,7 +54,7 @@
 /* Wrapping at a maximum width is optional */
 .wrap .grid,
 .grid.wrap {
-  max-width: 978px;
+  max-width: 1200px;
   margin: 0 auto;
 }
 
@@ -558,6 +558,7 @@ aside ul:first-child {
 
 aside li {
   list-style-type: none;
+  font-size: 16px;
 }
 
 aside li a {

@@ -1,0 +1,22 @@
+---
+layout: second_template
+title: C++
+category : C++
+group: 技术
+---
+{% include JB/setup %}
+
+{% for category in site.categories %}
+	{% if "{{ category[0] }}" == "{{ page.category }}" %}
+		<h2>"========="</h2>
+		<h2 id="{{ category[0] }}-ref">{{ category[0] | join: "/" }}</h2>
+	  	<ul>
+	    	{% assign pages_list = category[1] %}  
+	    	{% include JB/pages_list %}
+	  	</ul>
+	{% else %}
+		<h2>"{{ category[0] }}"</h2>
+		<h2>"{{ page.category }}"</h2>
+		<h2>"{{ page.group }}"</h2>
+	{% endif %}
+{% endfor %}
