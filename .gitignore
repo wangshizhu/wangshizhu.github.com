@@ -9,3 +9,5 @@ Thumbs.db
 .rbenv-version
 .rvmrc
 *.bat
+*.sublime-project
+*.sublime-workspace
