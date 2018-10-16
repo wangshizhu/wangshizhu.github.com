@@ -5,6 +5,16 @@ tagline: Supporting tagline
 ---
 {% include JB/setup %}
 
+{% highlight python %}
+class Functor:
+	def __init__(self, func, *args):
+		self.func = func
+		self.args = args
+
+	def __call__(self, *args):
+		self.func(*(self.args + args))
+{% endhighlight %}
+
 Read [Jekyll Quick Start](http://jekyllbootstrap.com/usage/jekyll-quick-start.html)
 
 Complete usage and documentation available at: [Jekyll Bootstrap](http://jekyllbootstrap.com)

@@ -3,12 +3,13 @@
 permalink: /:categories/:year/:month/:day/:title 
 
 exclude: [".rvmrc", ".rbenv-version", "README.md", "Rakefile", "changelog.md"]
-highlighter: pygments
+highlight: pygmentize
 
 # Themes are encouraged to use these universal variables 
 # so be sure to set them if your theme uses them.
 #
 title : 王仕柱
+motto: 温故而知新
 discr: 一点一滴
 tagline: Site Tagline
 author :
