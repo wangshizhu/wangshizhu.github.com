@@ -1,6 +1,6 @@
 ---
 layout: second_template
-title: 几个cast
+title: static_cast和dynamic_cast
 category : C++
 tagline: "Supporting tagline"
 tags : [C++]
