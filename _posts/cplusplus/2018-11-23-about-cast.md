@@ -29,7 +29,7 @@ permalink: cast
 
 		dynamic_cast 只适用于指针或引用
 
-* 代码实例
+* 代码示例
 	
 	`
 	class Vehicle
@@ -59,6 +59,13 @@ permalink: cast
 		}
 	public:
 		int m_nWheels;
+	};
+	class Texi : public Car
+	{
+	public:
+		Texi()
+		{
+		}
 	};
 	class Lorry : public Vehicle
 	{
@@ -186,3 +193,163 @@ permalink: cast
 	static_cast 可用于将 int 转换为 char。 但是，得到的 char 可能没有足够的位来保存整个 int 值 ,
 	同样，这需要程序员来验证 static_cast 转换的结果是否安全
 
+	static_cast 多用于类层次结构中的上行转换
+
+* dynamic_cast
+	
+	`
+	dynamic_cast<type_id>(expression)
+	`
+
+	type-id 必须是一个**指针**或**引用**到以前已定义的类类型的引用或**指向 void 的指针**。 
+	如果 type-id 是指针，则expression 的类型必须是指针，如果 type-id 是引用，则为左值。
+
+	上行转换:
+
+	如果 type-id 是指向 expression的明确的可访问的直接或间接基类的指针，
+	则结果是指向 type-id 类型的唯一子对象的指针。
+
+	**向上转换是一种隐式转换**。
+
+	如果 type-id 为 void*，则做运行时进行检查确定 expression的实际类型。 
+	结果是指向 by expression 的完整的对象的指针。
+
+	如果 type-id 不是 void*，则做运行时进行检查以确定是否由 expression 指向的对象可以转换为由 type-id指向的类型。
+
+	`
+	void DynamicUpCast(Texi* pTexi)
+	{
+		Car* pCar = dynamic_cast<Car*>(pTexi);
+		if (nullptr == pCar)
+		{
+			cout << "cast to pCar faild" << endl;
+		}
+		else
+		{
+			cout << "cast to pCar success" << endl;
+		}
+		Vehicle* pVehicle = dynamic_cast<Vehicle*>(pTexi);
+		if (nullptr == pVehicle)
+		{
+			cout << "cast to pVehicle faild" << endl;
+		}
+		else
+		{
+			cout << "cast to pVehicle success" << endl;
+		}
+	}
+	{
+		Texi* pTexi = new Texi;
+		DynamicUpCast(pTexi);
+	}
+	`
+
+	输出：
+
+	`
+	cast to pCar success
+	cast to pVehicle success
+	`
+
+	在多继承类层次结构中，子类转换到基类（跨父类时）会发生转换不明确的错误，例如一下示例中Moto转换到Vehicle时，
+	当使用dynamic_cast进行上行转换时，虽然能编译通过，但转换后指针为空；
+	当使用static_cast进行上行转换时，编译不通过，发生转换不明确的错误。
+
+	`
+	class Bicycle : public Vehicle
+	{
+	public:
+		Bicycle()
+		{
+		}
+	};
+	class Electrombile : public Vehicle
+	{
+	public:
+		Electrombile()
+		{
+		}
+	};
+	class Moto : public Electrombile, public Bicycle
+	{
+	public:
+		Moto()
+		{
+		}
+	};
+	{
+		Moto* pMoto = new Moto;
+		//Vehicle* pVehicle = static_cast<Vehicle*>(pMoto);
+		Vehicle* pVehicle = dynamic_cast<Vehicle*>(pMoto);
+		if (nullptr == pVehicle)
+		{
+			cout <<"moto-vehicle faild"<<endl;
+		}
+	}
+	`
+
+	多继承的正确转换：
+
+	`
+	{
+		Moto* pMoto = new Moto;
+		Bicycle* pBicycle = static_cast<Bicycle*>(pMoto);
+		Vehicle* pVehicle = static_cast<Vehicle*>(pBicycle);
+	}
+	`
+
+	**dynamic_cast用于相互转换**，只要被转换对象是相互转换对象的子类，例如下面示例，
+	Moto是Bicycle、Electrombile的子类，我们尝试这样的转换，Moto -- Bicycle -- Electrombile
+
+	`
+	{
+		Moto* pMoto = new Moto;
+		Bicycle* pBicycle = static_cast<Bicycle*>(pMoto);
+		Electrombile* pElectrombile = dynamic_cast<Electrombile*>(pBicycle);
+		if (nullptr == pElectrombile)
+		{
+			cout << "cross cast faild" << endl;
+		}
+		else
+		{
+			cout << "cross cast success" << endl;
+		}
+	}
+	`
+	输出:
+
+	`
+	cross cast success
+	`
+
+	下行转换：
+
+	如果 expression 类型是 type-id类型的基类，则做运行时检查来看是否 expression 确实指向 type-id类型的完整对象。 
+	如果为 true，则结果是指向 type-id类型的完整对象的指针，如果为false,则转换的指针为NULL。正如我们上面的例子所示。
+
+	当下行转换为引用时，如果失败会抛出一个继承自exception的bad_cast异常类。
+
+	`
+	void DynamicDownCastRef(Vehicle& objVehicle)
+	{
+		try
+		{
+			Texi& objTexi = dynamic_cast<Texi&>(objVehicle);
+			cout << "down-cast to objTexi as ref success" << endl;
+		}
+		catch (std::bad_cast objBadCastException)
+		{
+			cout << "down-cast to objTexi as ref faild" << endl;
+		}
+	}
+	{
+		Vehicle objVehicle;
+		DynamicDownCastRef(objVehicle);
+	}
+	`
+
+	输出：
+
+	`
+	down-cast to objTexi as ref faild
+	`
