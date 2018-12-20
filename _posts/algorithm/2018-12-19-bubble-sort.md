@@ -27,30 +27,30 @@ permalink: bubble_sort
 		#include <iostream>
 		using namespace std;
 
-		template<typename T, std::size_t N> 
-		constexpr std::size_t arraySize(T(&)[N]) noexcept 
+		template<typename T, std::size_t N>
+		constexpr std::size_t arraySize(T(&)[N]) noexcept
 		{
 			return N;
 		}
 
-		void Print(int nUnSorted[], const int& nLength)
+		void Print(int nUnSorted[], const std::size_t& nLength)
 		{
-			for (int i = 0; i < nLength; i++)
+			for (std::size_t i = 0; i < nLength; i++)
 			{
 				cout << nUnSorted[i] << " ";
 			}
 			cout << endl;
 		}
 
-		void BubbleSort(int nUnSorted[], const int& nLength)
+		void BubbleSort(int nUnSorted[], const std::size_t& nLength)
 		{
 			if (nLength <= 1)
 			{
 				return;
 			}
-			for (int i = 0;i<nLength;i++)
+			for (std::size_t i = 0;i<nLength;i++)
 			{
-				for (int j = 0;j<nLength-1;j++)
+				for (std::size_t j = 0;j<nLength-1;j++)
 				{
 					if (nUnSorted[j] > nUnSorted[j+1])
 					{
@@ -96,7 +96,7 @@ permalink: bubble_sort
 
 	优化后代码：
 
-		void BubbleSort(int nUnSorted[], const int& nLength)
+		void BubbleSort(int nUnSorted[], const std::size_t& nLength)
 		{
 			if (nLength <= 1)
 			{
@@ -104,18 +104,16 @@ permalink: bubble_sort
 			}
 			// 无序区边界
 			int nUnsortBoundary = nLength - 1;
-			int nLastSwapIndex = 0;
-			for (int i = 0;i<nLength && nUnsortBoundary > 0;i++)
+			for (std::size_t i = 0; i < nLength; i++)
 			{
-				bool bSwaped = false;
-				for (int j = 0;j<nUnsortBoundary;j++)
+				int nLastSwapIndex = 0;
+				for (std::size_t j = 0; j < nUnsortBoundary; j++)
 				{
-					if (nUnSorted[j] > nUnSorted[j+1])
+					if (nUnSorted[j] > nUnSorted[j + 1])
 					{
 						nUnSorted[j] ^= nUnSorted[j + 1];
 						nUnSorted[j + 1] ^= nUnSorted[j];
 						nUnSorted[j] ^= nUnSorted[j + 1];
-						bSwaped = true;
 						nLastSwapIndex = j;
 					}
 				}
@@ -123,7 +121,7 @@ permalink: bubble_sort
 				nUnsortBoundary = nLastSwapIndex;
 				Print(nUnSorted, nLength);
 
-				if (!bSwaped)
+				if ( 0 == nLastSwapIndex)
 				{
 					break;
 				}
