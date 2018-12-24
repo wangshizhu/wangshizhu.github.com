@@ -16,8 +16,3 @@ permalink: high-performance-mysql-5-chapter-strategy
 	- 索引可以将随机IO变为顺序IO
 
 * 高性能索引策略
-
-
-
-
-
