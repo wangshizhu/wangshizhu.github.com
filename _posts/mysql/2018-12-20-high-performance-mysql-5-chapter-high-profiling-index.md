@@ -1,10 +1,10 @@
 ---
 layout: second_template
-title: 创建高性能索引
+title: 创建高性能索引之B-Tree索引
 category: mysql
 tagline: "Supporting tagline"
 tags : [mysql]
-permalink: high-performance-mysql-5-chapter
+permalink: high-performance-mysql-5-chapter-B-Tree-index
 ---
 
 * B-Tree索引
@@ -55,6 +55,16 @@ permalink: high-performance-mysql-5-chapter
 	- 精确匹配某一列并范围匹配另一列
 
 	以上表为例，即第一列last_name全匹配，第二列first_name范围匹配
+
+* B-Tree索引的限制
+
+	- 如果不是按照索引的最左列开始查找，则无法使用索引。以上表为例，`KEY 'key1' ('last_name','first_name',dob) `无法用于查找**名字**(即用first_name索引)为wuji的人，也无法用于查找特定生日的人(即用dob索引)，这两列索引均不是最左索引，也无法用于**姓**以某个字母结尾的人
+
+	- 不能跳索引。以上表为例，`KEY 'key1' ('last_name','first_name',dob) `无法使用**姓zhang并且某个特定出生日期的人**，不使用first_name,则Mysql只能使用索引第一列
+
+	- 如果查询中有某一列使用了范围查询，则其右边的所有列都无法使用索引优化查找。以上表为例，例如:`where last_name="zhang" AND first_name LIKE 'w%' AND dob='1976-12-23'`这个查询只能使用索引的前两列即last_name、first_name。使用过程中如果这个范围固定我们完全可以使用多个等于条件替代范围查找
+
+
 
 
 
