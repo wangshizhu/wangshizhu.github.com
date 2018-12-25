@@ -47,3 +47,5 @@ permalink: copy-constructor
 		return objTmp;
 	}
 	`
+
+* 默认成员逐次初始化
