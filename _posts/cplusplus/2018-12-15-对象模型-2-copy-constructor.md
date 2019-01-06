@@ -66,7 +66,7 @@ permalink: copy-constructor
 	上面class Word含有一个class string object， 这时Word Object的default memberwise initialization会拷贝m_nID;再于String
 	member object m_strDescribe身上递归实施memberwise initialization
 
-	copy constructor 也像default constructor的描述一样————————在必要的时候才由编译器产生出来，也同样分为trivial 和 nontrivial两种。只有nontrivial的实例才会被合成于程序中，那么决定一个copy constructor是否为trivial的标准在于class是否展现出所谓的“bitwise copy semantics”
+	copy constructor 也像default constructor的描述一样——在必要的时候才由编译器产生出来，也同样分为trivial 和 nontrivial两种。只有nontrivial的实例才会被合成于程序中，那么决定一个copy constructor是否为trivial的标准在于class是否展现出所谓的“bitwise copy semantics”
 
 	一个class object可用两种方式复制得到，一种是被初始化（上面提到的），一种是被指定（assignment），从概念上讲这两个操作分别是以copy constructor 和 copy assignment operator完成的
 
@@ -116,4 +116,108 @@ permalink: copy-constructor
 	3. 当class声明一个或多个virtual function时
 
 	4. 当class派生自一个继承链，其中有一个或多个virtual base classes时
+
+	重点说明3、4情况
+
+	- 当class声明一个或多个virtual function时
+
+	`
+	class ZooAnimal
+	{
+	public:
+		ZooAnimal()
+		{
+		}
+		virtual ~ZooAnimal()
+		{
+		}
+		virtual void animate()
+		{
+		}
+		virtual void draw()
+		{
+		}
+	};
+	class Bear : public ZooAnimal
+	{
+	public:
+		Bear()
+		{
+		}
+		void animate()
+		{
+		}
+		void draw()
+		{
+		}
+		virtual void dance()
+		{
+		}
+	};
+	int main()
+	{
+		{
+			Bear objBearA;
+			Bear objBearB = objBearA;
+			ZooAnimal za = objBearA;
+		}
+		system("pause");
+	    return 0;
+	}
+	`
+
+	以上述代码为例，我们发现class Bear object objBearA与class Bear object objBearB的vptr相等，以及vptl内的函数指针也相同，
+	因此以同类型的object作为另一个object的初值时可以直接靠"bitwise copy semantics"完成。
+
+	同时`ZooAnimal za = objBearA;`发现class ZooAnimal object za的vptr与class Bear object objBearA不同，如果还是直接靠"bitwise copy semantics"完成就会导致vptr相等，这时编译器合成出ZooAnimal copy constructor，
+	并且显示的设定za的vptr指向ZooAnimal class的virtual table，而不是从=的右边object直接拷贝过来
+
+	- 当class派生自一个继承链，其中有一个或多个virtual base classes时
+
+	**virtual base class的存在需要特别处理。一个class object如果以另一个object作为初值，而后者有一个virtual base class subject，那么也会使"bitwise copy semantics"失效**
+
+	每一个编译器对于虚拟继承的支持都必须让"derived class object"中的virtual base class subobject位置在执行期就准备好，维护位置的完整性是编译器的责任。而"bitwise copy semantic"可能会破坏这个位置，所以编译器必须在它自己合成出来的copy constructor中做出选择
+
+	在上面第3种情况总结出"bitwise copy semantics"失效是发生于“一个class object以其derived classes的某个object作为初值”之时
+
+	`
+	class Raccoon : public virtual ZooAnimal
+	{
+	public:
+		Raccoon()
+		{
+		}
+	};
+	`
+	编译器所产生的代码：
+
+	1. 用以调用ZooAnimal的default constructor
+
+	2. 浆Raccoon的vptr初始化
+
+	3. 定位出Raccoon中的ZooAnimal subobject
+
+	`
+	class Raccoon : public virtual ZooAnimal
+	{
+	public:
+		Raccoon()
+		{
+		}
+	};
+	class RedPanda : public Raccoon
+	{
+	public:
+		RedPanda()
+		{
+		}
+	};
+	{
+		RedPanda objectRP;
+		Raccoon objectR = objectRP;
+	}
+	`
+
+	上面代码`RedPanda objectRP; Raccoon objectR = objectRP;`为了正确的设定objectR的初值，编译器必须合成一个copy constructor，安插一些代码设定virtual base class pointer/offset的初值，并且对每一个members执行必要的memberwise初始化操作，以及执行其他内存相关操作
+	
 
