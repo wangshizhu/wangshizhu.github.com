@@ -30,7 +30,7 @@ permalink: make_unique&make_shared
 
 * * *
 
-* ## 使用make的好处而不是new 
+* ## 使用make而不是new 
 
 	下面以std::make_shared为代表说明，对应的说明同样适用于std::make_unique
 	
@@ -93,3 +93,5 @@ permalink: make_unique&make_shared
 
 * * *
 * ## 使用make的限制
+
+	1. make函数都不支持指定自定义的deleter，但是std::unique_ptr以及std::shared_ptr都有构造函数来支持这样
