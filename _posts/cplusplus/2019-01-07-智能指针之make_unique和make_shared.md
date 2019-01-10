@@ -95,3 +95,8 @@ permalink: make_unique&make_shared
 * ## 使用make的限制
 
 	1. make函数都不支持指定自定义的deleter，但是std::unique_ptr以及std::shared_ptr都有构造函数来支持这样
+
+	2. make函数转发参数给对象的构造函数，但是它使用的是括号“()”而非大括号“{}”,所以对于make函数不具备转发以大括号“{}”形式的参数给对象的构造函数。
+	但是可以通过这种间接方式达到这种效果`auto initList = {100,200}; auto sharedPerson = std::make_shared<Person>(initList)`
+
+	3. 对于std::unique_ptr的限制只是以上两种场景，而对于std::shared_ptr不只是以上两种场景。
