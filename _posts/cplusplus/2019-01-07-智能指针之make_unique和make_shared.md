@@ -6,6 +6,11 @@ tagline: "Supporting tagline"
 tags : [C++]
 permalink: make_unique&make_shared
 ---
+
+[initialize_way]: /initialize_way
+
+[weak_ptr]: /weak_ptr
+
 * * *
 * ## 解释
 
@@ -96,7 +101,9 @@ permalink: make_unique&make_shared
 
 	1. make函数都不支持指定自定义的deleter，但是std::unique_ptr以及std::shared_ptr都有构造函数来支持这样
 
-	2. make函数转发参数给对象的构造函数，但是它使用的是括号“()”而非大括号“{}”,所以对于make函数不具备转发以大括号“{}”形式的参数给对象的构造函数。
+	2. make函数转发参数给对象的构造函数，但是它使用的是括号“()”而非大括号“{}”,所以对于make函数不具备转发以大括号“{}”形式的参数给对象的构造函数。关于大括号{}和小括号()在初始化时的区别请参考之前的这篇[文章][initialize_way]，
 	但是可以通过这种间接方式达到这种效果`auto initList = {100,200}; auto sharedPerson = std::make_shared<Person>(initList)`
 
-	3. 对于std::unique_ptr的限制只是以上两种场景，而对于std::shared_ptr不只是以上两种场景。
+	3. 对于std::unique_ptr的限制只是以上两种场景，而对于std::shared_ptr不只是以上两种场景。对于自定义了内存管理的类(类自身定义了 opeator new 和 operator delete) 通常仅用来分配和释放与该类同等大小的内存块。这样的类不适合使用std::make_shared创建对象，首先std::shared_ptr所支持的自定义分配器通过std::allocate_shared实现，而std::allocate_shared所要求的内存大小并不等于要动态分配对象的大小，而是该动态分配对象的大小加上控制块的大小，因此，使用make系列函数去为带有自定义版本的opeator new 和 operator delete的类创建对象是一个坏主意
+
+	4. 使用std::make_shared相对于直接使用new的大小及性能优点源自于：std::shared_ptr的控制 块是和被管理的对象放在同一个内存区块中。当该对象的引用计数变成了0，该对象被销毁 （析构函数被调用）。但是，它所占用的内存直到控制块被销毁才能被释放，因为被动态分配的内存块同时包含了两者。控制块包含两个引用计数，第1个引用计数记录了多少个std::shared_ptr引用了当前的控制块，第2个引用计数记录了多少个std::weak_ptr引用了当前的控制块（关于std::weak_ptr的介绍可以参考这篇[文章][weak_ptr]）。第2个引用计数被称之为弱引用计数。std::weak_ptr通过检查控制块里的第1个引用计数来校验自己是否有效，假如第1个引用计数为0，则std::weak_ptr就已失效。**只要有一个std::weak_ptr还引用着控制块(即，第2个引用计数大于0)，控制块就会继续存在，包含控制块的内存就不会被回收。被std::shared_ptr的make函数分配的内存直至指向它的最后一个std::shared_ptr和最后一个std::weak_ptr都被销毁时，才会得到回收**，所以这里就出现最后一个std::shared_ptr的析构与最后一个std::weak_ptr析构之间的 间隔时间问题，该对象被析构与它所占用的内存被回收之间也会产生间隔
