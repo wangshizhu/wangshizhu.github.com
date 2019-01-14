@@ -106,4 +106,28 @@ permalink: make_unique&make_shared
 
 	3. 对于std::unique_ptr的限制只是以上两种场景，而对于std::shared_ptr不只是以上两种场景。对于自定义了内存管理的类(类自身定义了 opeator new 和 operator delete) 通常仅用来分配和释放与该类同等大小的内存块。这样的类不适合使用std::make_shared创建对象，首先std::shared_ptr所支持的自定义分配器通过std::allocate_shared实现，而std::allocate_shared所要求的内存大小并不等于要动态分配对象的大小，而是该动态分配对象的大小加上控制块的大小，因此，使用make系列函数去为带有自定义版本的opeator new 和 operator delete的类创建对象是一个坏主意
 
-	4. 使用std::make_shared相对于直接使用new的大小及性能优点源自于：std::shared_ptr的控制 块是和被管理的对象放在同一个内存区块中。当该对象的引用计数变成了0，该对象被销毁 （析构函数被调用）。但是，它所占用的内存直到控制块被销毁才能被释放，因为被动态分配的内存块同时包含了两者。控制块包含两个引用计数，第1个引用计数记录了多少个std::shared_ptr引用了当前的控制块，第2个引用计数记录了多少个std::weak_ptr引用了当前的控制块（关于std::weak_ptr的介绍可以参考这篇[文章][weak_ptr]）。第2个引用计数被称之为弱引用计数。std::weak_ptr通过检查控制块里的第1个引用计数来校验自己是否有效，假如第1个引用计数为0，则std::weak_ptr就已失效。**只要有一个std::weak_ptr还引用着控制块(即，第2个引用计数大于0)，控制块就会继续存在，包含控制块的内存就不会被回收。被std::shared_ptr的make函数分配的内存直至指向它的最后一个std::shared_ptr和最后一个std::weak_ptr都被销毁时，才会得到回收**，所以这里就出现最后一个std::shared_ptr的析构与最后一个std::weak_ptr析构之间的 间隔时间问题，该对象被析构与它所占用的内存被回收之间也会产生间隔
+	4. 使用std::make_shared相对于直接使用new的大小及性能优点源自于：std::shared_ptr的控制 块是和被管理的对象放在同一个内存区块中。当该对象的引用计数变成了0，该对象被销毁 （析构函数被调用）。但是，它所占用的内存直到控制块被销毁才能被释放，因为被动态分配的内存块同时包含了两者。控制块包含两个引用计数，第1个引用计数记录了多少个std::shared_ptr引用了当前的控制块，第2个引用计数记录了多少个std::weak_ptr引用了当前的控制块（关于std::weak_ptr的介绍可以参考这篇[文章][weak_ptr]）。第2个引用计数被称之为弱引用计数。std::weak_ptr通过检查控制块里的第1个引用计数来校验自己是否有效，假如第1个引用计数为0，则std::weak_ptr就已失效。**只要有一个std::weak_ptr还引用着控制块(即，第2个引用计数大于0)，控制块就会继续存在，包含控制块的内存就不会被回收。被std::shared_ptr的make函数分配的内存直至指向它的最后一个std::shared_ptr和最后一个std::weak_ptr都被销毁时，才会得到回收**，所以这里就出现最后一个std::shared_ptr的析构与最后一个std::weak_ptr析构之间的间隔时间问题，该对象被析构与它所占用的内存被回收之间也会产生间隔，如果该对象占用内存很大并且这个时间间隔很长就导致内存无法有效利用。所以这也是我们注意得点。**针对上面的问题可以使用new解决，本质上使用了new，控制块和动态分配的对象所处的内存不在一起，可以单独回收，
+	如果直接使用了new，一旦指向对象的最后一个std::shared_ptr被销毁，对象所占的内存马上得到回收，
+	使用new就要保证异常安全，实际上直接使用new时，只要保证你在一句代码中，只做了将new的结果传递给一个智能指针的构造函数，
+	没有做其它事情。这也会阻止编译器在new的使用和调用用来管理new的对象的智能指针的构造函数之间，插入可能会抛出异常的代码**，结合上面提到的代码示例，一个可行的创建对象方式：`std::shared_ptr<Person> sharedPerson(new Person);`
+	`ProcessPerson(sharedPerson,ComputeParam())`即使在创建std::shared_ptr对象时出现了异常，
+	std::shared_ptr内部也可以保证new出来的内存被释放，不会造成内存泄漏。
+	在这种调用方式中变量sharedPerson其实是个左值并且函数ProcessPerson的std::shared_ptr<Person>参数按值传递，
+	这样就需要一次copy，而非异常安全代码ProcessPerson(std::shared_ptr<Person>(new Person),ComputeParam())，
+	这种方式传递的是个右值，而从右值构造只需要std::move，对于std::shared_ptr来说，区别是显著的，因为copy一个
+	std::shared_ptr需要对它的引用计数进行原子加1，move一个std::shared_ptr不需要对引
+	用计数做任何操作。对于异常安全的代码来说，若想获得和非异常安全代码一样的性能表
+	现，我们需要对sharedPerson用std::move，把它转化成一个右值ProcessPerson(std::move(sharedPerson),ComputeParam())
+
+* * *
+* #### 最后 ####
+
+	- 和直接使用new相比，使用make函数减少了代码的重复量，提升了异常安全度，并且，
+对于std::make_shared以及std::allocate_shared来说，产生的代码更加简洁快速
+
+	- 结合上面提到的也会存在使用make函数不合适的场景：包含指定自定义的deleter,以及传递大括号
+initializer的需要
+	
+	- 对于std::shared_ptr来说，使用make函数的额外的不使用场景还包含带有自定义内存
+管理的内存非常紧俏的系统，非常大的对象以及比对应的std::shared_ptr活的还要
+长的std::weak_ptr
