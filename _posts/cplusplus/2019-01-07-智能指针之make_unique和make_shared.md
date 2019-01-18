@@ -1,6 +1,6 @@
 ---
 layout: second_template
-title: 智能指针之std::make_unique和std::make_shared
+title: make_unique和make_shared
 category: C++
 tagline: "Supporting tagline"
 tags : [C++]
