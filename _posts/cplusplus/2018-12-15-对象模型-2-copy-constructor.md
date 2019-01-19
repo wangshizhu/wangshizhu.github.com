@@ -7,6 +7,7 @@ tags : [C++]
 permalink: copy-constructor
 ---
 
+* * *
 * 测试环境
 	
 	vs2015
@@ -15,6 +16,7 @@ permalink: copy-constructor
 
 	win10 64位
 
+* * *
 * Copy Constructor
 
 	有三种情况会以一个object内容作为另一class object的初值
@@ -48,6 +50,7 @@ permalink: copy-constructor
 	}
 	`
 
+* * *
 * 默认成员逐次初始化
 
 	如果class 没有提供一个显示的copy constructor，其内部是以所谓的默认成员逐次初始化(default memberwise initialization)手法完成的，也就是把每个内建的或派生的data member的值从某个object拷贝到另一个object。
@@ -70,6 +73,7 @@ permalink: copy-constructor
 
 	一个class object可用两种方式复制得到，一种是被初始化（上面提到的），一种是被指定（assignment），从概念上讲这两个操作分别是以copy constructor 和 copy assignment operator完成的
 
+* * *
 * 位逐次拷贝(bitwise copy semantics)
 
 	如果一个类：
@@ -105,6 +109,7 @@ permalink: copy-constructor
 			m_nID = objWord.m_nID;
 		}
 
+* * *
 * 没有bitwise copy semantics的情况
 
 	什么时候一个class不展现出“bitwise copy semantics”?
@@ -189,6 +194,7 @@ permalink: copy-constructor
 		}
 	};
 	`
+	
 	编译器所产生的代码：
 
 	1. 用以调用ZooAnimal的default constructor
