@@ -6,3 +6,4 @@ tagline: "Supporting tagline"
 tags : [C++]
 permalink: move&forward
 ---
+* * *
