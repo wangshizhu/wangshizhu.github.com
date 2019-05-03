@@ -1,6 +1,6 @@
 ---
 layout: second_template
-title: InnoDB记录结构
+title: InnoDB记录结构之Compact
 category: mysql
 tagline: "Supporting tagline"
 tags : [mysql]
