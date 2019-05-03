@@ -23,7 +23,7 @@ permalink: innodb-row-format-compact
 
 	以记录为单位来向表中插入数据的，这些记录在磁盘上的存放方式被称为行格式或者记录格式
 
-	InnoDB存储引擎到现在为止设计了4种不同类型的行格式，分别是Compact、Redundant、Dynamic和Compressed行格式
+	InnoDB存储引擎到现在为止设计了4种不同类型的行格式，分别是Compact、Redundant(5.0之前)、Dynamic和Compressed行格式
 
 	创建或修改表的语句中指定行格式:
 
@@ -168,3 +168,69 @@ permalink: innodb-row-format-compact
 	[Compact4]: assets/themes/my_blog/img/compact_row_format_4.jpg
 
 	**对于 CHAR(M) 类型的列来说，当列采用的是定长字符集时，该列占用的字节数不会被加到变长字段长度列表，而如果采用变长字符集时，该列占用的字节数也会被加到变长字段长度列表，变长字符集的CHAR(M)类型的列要求至少占用M个字节，而VARCHAR(M)却没有这个要求。比方说对于使用utf8字符集的CHAR(10)的列来说，该列存储的数据字节长度的范围是10～30个字节。即使我们向该列中存储一个空字符串也会占用10个字节，这是怕将来更新该列的值的字节长度大于原有值的字节长度而小于10个字节时，可以在该记录处直接更新，而不是在存储空间中重新分配一个新的记录空间，导致原有的记录空间成为所谓的碎片**
+
+***
+* ### 行溢出数据 ###
+	
+	以最敏感的VARCHAR(M)为例，我们通过上面的分析可以知道VARCHAR(M)类型的列最多可以占用65535个字节，其中M代表最多存储的字符数量，如果我们使用ascii字符集的话，一个字符就代表一个字节，那么当我们创建如下表时：
+
+		CREATE TABLE row_format_test(
+		c VARCHAR(65535)
+		)ENGINE=INNODB CHARSET=ASCII ROW_FORMAT=COMPACT;
+
+	抛出如下错误：
+
+		Row size too large. The maximum row size for the used table type, not counting BLOBs, is 65535. This includes storage overhead, check the manual. You have to change some columns to TEXT or BLOBs
+
+	从报错信息里可以看出，MySQL对一条记录占用的最大存储空间是有限制的，除了BLOB或者TEXT类型的列之外，其他所有的列（不包括隐藏列和记录头信息）占用的字节长度加起来不能超过65535个字节。所以MySQL服务器建议我们把存储类型改为TEXT或者BLOB的类型。这个65535个字节除了列本身的数据之外，还包括一些其他的数据（storage overhead），比如说我们为了存储一个VARCHAR(M)类型的列，其实需要占用3部分存储空间：
+
+	1. 真实数据
+	2. 真实数据占用字节的长度
+	3. NULL值标识，如果该列有NOT NULL属性则可以没有这部分存储空间
+
+	如果该VARCHAR类型的列有NULL属性，那最多只能存储65532个字节的数据，因为真实数据的长度可能占用2个字节，NULL值标识需要占用1个字节，所以我们再次尝试创建表：
+
+		CREATE TABLE row_format_test(
+		c VARCHAR(65532)
+		)ENGINE=INNODB CHARSET=ASCII ROW_FORMAT=COMPACT;
+
+	创建成功，如果VARCHAR类型的列有NOT NULL属性，那最多只能存储65533个字节的数据，因为真实数据的长度可能占用2个字节，不需要NULL值标识：
+
+		CREATE TABLE row_format_test(
+		c VARCHAR(65533) NOT NULL DEFAULT ""
+		)ENGINE=INNODB CHARSET=ASCII ROW_FORMAT=COMPACT;
+
+	同样创建成功，上述创建都是基于ascii字符集，那么换成gbk或者utf8这个长度怎么计算呢？**如果VARCHAR(M)类型的列使用的不是ascii字符集，那M的最大取值取决于该字符集表示一个字符最多需要的字节数。在列的值允许为NULL的情况下，gbk字符集表示一个字符最多需要2个字节，那在该字符集下，M的最大取值就是32766（也就是：65532/2），也就是说最多能存储32766个字符；utf8字符集表示一个字符最多需要3个字节，那在该字符集下，M的最大取值就是21844，就是说最多能存储21844（也就是：65532/3）个字符**
+
+	**还有一个事实：上述例子在列的值允许为NULL的情况下，gbk字符集下M的最大取值就是32766，utf8字符集下M的最大取值就是21844，这都是在表中只有一个字段的情况下说的，一定要记住一个行中的所有列（不包括隐藏列和记录头信息）占用的字节长度加起来不能超过65535个字节**
+
+***
+* ### 行溢出 ###
+
+	文章开头说过，MySQL中磁盘和内存交互的基本单位是页，也就是说MySQL是以页为基本单位来管理存储空间的，我们的记录都会被分配到某个页中存储。而一个页的大小一般是16KB，也就是16384字节，以这个表为例:
+
+		CREATE TABLE row_format_test(
+		c VARCHAR(65532)
+		)ENGINE=INNODB CHARSET=ASCII ROW_FORMAT=COMPACT;
+
+	c列最多可以存储65532个字节，这就导致一个数据页放不下的情况，**在Compact和Reduntant(5.0之前)行格式中，对于占用存储空间非常大的列，在记录的真实数据处只会存储该列的一部分数据，把剩余的数据分散存储在几个其他的页中，然后记录的真实数据处用20个字节存储指向这些页的地址（当然这20个字节中还包括这些分散在其他页面中的数据的占用的字节数），从而可以找到剩余数据所在的页**
+
+	**不只是 VARCHAR(M) 类型的列，其他的 TEXT、BLOB 类型的列在存储数据非常多的时候也会发生行溢出**
+
+	那么列存储多少字节的数据时就会发生行溢出？**MySQL中规定一个页中至少存放两行记录**，以上表为例，上表只有一列，那么当插入两条记录时，每条记录至少多少字节才会溢出？我们先看一下数据页的存储信息：
+
+	1. 每个页除了存放我们的记录以外，也需要存储一些额外的信息，加起来需要136个字节的空间，其他的空间都可以被用来存储记录
+	2. 每个记录需要的额外信息是27字节
+		- 2个字节用于存储真实数据的长度
+		- 1个字节用于存储列是否是NULL值
+		- 5个字节大小的头信息
+		- 6个字节的row_id列
+		- 6个字节的transaction_id列
+		- 7个字节的roll_pointer列
+
+	那么就可以得出一个公式：`136 + 2×(27 + n) > 16384`，求得`n > 8098`。也就是说如果一个列中存储的数据不大于8098个字节，那就不会发生行溢出，否则就会发生行溢出。不过这个8098个字节的结论只是针对只有一个列的row_format_test表来说的，如果表中有多个列，那上边的式子和结论都需要改一改了，所以重点就是：**你不用关注这个临界点是什么，只要知道如果我们想一个行中存储了很大的数据时，可能发生行溢出的现象**
+
+***
+* ### Dynamic、Compressed、Redundant行格式 ###
+
+	Redundant行格式是MySQL5.0之前版本，不做讨论，Dynamic和Compressed行格式，这两种行格式和Compact行格式挺像，只不过在处理行溢出数据时不一样，它们不会在记录的真实数据处存储字段真实数据的前768个字节，而是把所有的字节都存储到其他页面中，只在记录的真实数据处存储其他页面的地址，Compressed行格式和Dynamic不同的一点是，Compressed行格式会采用压缩算法对页面进行压缩，以节省空间
