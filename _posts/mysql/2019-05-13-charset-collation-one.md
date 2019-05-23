@@ -4,7 +4,7 @@ title: 字符集和比较规则之一
 category: mysql
 tagline: "Supporting tagline"
 tags : [mysql]
-permalink: charset&collation
+permalink: charset-collation-one
 ---
 ***
 * ### 测试环境 ###
