@@ -94,7 +94,7 @@ permalink: charset-collation-two
 
 		假设客户端采用的字符集和 character_set_results 不一样的话，这就可能会出现客户端无法解码结果集的情况，结果就是在屏幕上出现乱码
 
-	**字符集的来回转换可能各种问题，在实际中尽量都把 character_set_client 、character_set_connection、character_set_results 这三个系统变量设置成和客户端使用的字符集一致的情况，这样减少了很多无谓的字符集转换**
+	**字符集的来回转换可能出现各种问题，在实际中尽量都把 character_set_client 、character_set_connection、character_set_results 这三个系统变量设置成和客户端使用的字符集一致的情况，这样减少了很多无谓的字符集转换**
 
 ***
 * ### 设置字符集 ###
