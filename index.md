@@ -5,16 +5,20 @@ tagline: Supporting tagline
 ---
 {% include JB/setup %}
 
-{% highlight python %}
-class Functor:
-	def __init__(self, func, *args):
-		self.func = func
-		self.args = args
+* ### 为什么写博客 ###
 
-	def __call__(self, *args):
-		self.func(*(self.args + args))
-{% endhighlight %}
+	记录技术路上的一点一滴。作为游戏服务器工程师涉及到的技术栈比较多，不同游戏项目需要的技术不同，随着时间流失，在大脑里的技术点也流失了，这里作为技术的落点，也作为分享，希望哪天再用起来某项技术也有参考资料，同时希望在技术探讨上起到抛砖引玉的效果，有需要纠正的知识欢迎给我发Email
 
+* ### 即将发布的文章 ###
 
+	- MySQL-InnoDB数据页结构
+
+	- C++-使用noexcept修饰不想抛出异常的函数
+
+	- Algorithm-快速排序及其不同演进方案
+
+	- DesignPatterns-迭代器模式
+
+	- Python-装饰器
 
 
