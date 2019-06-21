@@ -26,3 +26,8 @@ permalink: innoDB-page-structure
 	|-|-|-|
 	|File Head(文件头部)|38字节|页的一些基本信息|
 	|Page Head(页头部)|56字节|数据页的一些基本信息|
+	|Infimum + Supremum(最小记录和最大记录)|26字节|两条系统插入的行记录|
+	|User Records(用户真实记录)|不确定|实际存储的行记录数据|
+	|Free Space(空闲空间)|不确定|数据页中未使用的空间|
+	|Page Directory(页面目录)|不确定|数据页中某些记录的相对位置|
+	|File Trailer(文件尾部)|8字节|校验页是否完整|
