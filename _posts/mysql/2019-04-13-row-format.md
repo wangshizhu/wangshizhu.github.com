@@ -10,6 +10,8 @@ permalink: innodb-row-format-compact
 * ### 测试环境 ###
 	
 	MySQL 5.6
+	
+	innodb_ruby(关于它的使用可以参考它的[github][innodb_ruby])
 
 ***
 * ### InnoDB页简介 ###
