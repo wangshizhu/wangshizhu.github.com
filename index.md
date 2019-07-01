@@ -11,8 +11,6 @@ tagline: Supporting tagline
 
 * ### 即将发布的文章 ###
 
-	- MySQL-InnoDB数据页结构
-
 	- C++-使用noexcept修饰不想抛出异常的函数
 
 	- Algorithm-快速排序及其不同演进方案
