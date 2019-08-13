@@ -34,8 +34,37 @@ permalink: constexpr
 
 ***
 * ### constexpr作用于函数 ###
-
 	
+	* constexpr函数可以用在要求编译期常量的语境中，若传给一个constexpr函数的实参值是在编译期已知的，则结果也会在编译期间计算出来，如果任何一个实参值在编译期未知，则代码将无法通过编译
+
+	* 在调用constexpr函数时，若传入的值有一个或多个在编译期未知，则它的运作方式和普通函数没区别，也就是在运行期才能得到结果，所以编写编译期常量函数和运行期函数可以用一个constexpr函数代替
+
+	例如我们自己实现一个类似std::pow函数，标准库函数pow的工作对象是浮点型别，我们自己实现的函数只需整型结果，其次，std::pow并不是constexpr，所以如果我们想通过这个函数的返回值创建std::array是不可能的
+
+		constexpr int pow(int nBase,int nExp) noexcept
+		{
+			return nExp == 0 ? 1 : base * pow(nBase,nExp - 1);
+		}
+
+		constexpr auto num = 5;
+
+		std::array<int,pow(3,num)> results;
+
+	上面函数应该解读为：如果nBase、nExp是编译期常量，那么pow的结果就可以当做编译期常量；如果nBase、nExp中有一个不是编译期常量，则pow的返回结果就将在执行期计算；所以这个函数在编译期常量语境和运行期语境中都适用
+
+	**只有当constexpr函数的参数在传入编译期常量时才能返回编译期结果，对于这样的语境C++11要求这样的函数不得多于一个可执行语句，即一条return语句。所以上述自定义pow函数使用了条件运算符?:，避免了if-else，用到循环的地方用递归代替。而在C++14中这种限制放宽了，**所以也可以像下面这样写：
+
+		constexpr int pow(int nBase,int nExp) noexcept
+		{
+			auto result = 1;
+			for (int i=0;i<exp;++i)
+			{
+				result *= base;
+			}
+			return result;
+		}
+	
+	在型别方面，constexpr函数只限于传入和返回字面型别literal type，意思就是这样的型别能够在编译期可以决议的值，在C++11中所有的内建型别（除了void）都可以。同时自定义的型别也可以（只要满足编译期能够确定其值就可以），可以让它的构造函数和其他成员函数是constexpr，例如游戏里面描述二维的点Point类
 
 
 
