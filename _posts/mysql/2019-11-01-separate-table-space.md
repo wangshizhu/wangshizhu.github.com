@@ -72,7 +72,7 @@ permalink: separate-innodb-table-space
 
 **以索引为例，叶子结点为一个段，非叶子结点为一个段，所以一个索引有两个段，当然还有其他类型的段，例如对于一个包含聚簇索引、二级索引的表，那么它有4个段**
 
-**每个段对应一个结构INODE Entry，**而段对应哪个INODE Entry结构是在INDEX类型的页有一个Page Header部分存储的————PAGE_BTR_SEG_LEAF、PAGE_BTR_SEG_TOP，关于页类型可以参考这篇[文章][leaf_type]
+**每个段对应一个结构INODE Entry，**而段对应哪个INODE Entry结构是在INDEX类型的页有一个Page Header部分存储的————PAGE_BTR_SEG_LEAF、PAGE_BTR_SEG_TOP，关于INDEX类型页可以参考这篇[文章][leaf_type]
 ，PAGE_BTR_SEG_LEAF和PAGE_BTR_SEG_TOP都占用10个字节，它们都对应一个Segment Header的结构，下表是这个结构的组成：
 
 |名称|占用字节|描述|
@@ -81,7 +81,8 @@ permalink: separate-innodb-table-space
 |Page Number of the INODE Entry|4|INODE Entry结构所在的页面页号|
 |Byte Offset of the INODE Ent|2|INODE Entry结构在该页面中的偏移量|
 
-PAGE_BTR_SEG_LEAF记录着叶子节点段对应的INODE Entry结构的地址是哪个表空间的哪个页面的哪个偏移量，
+PAGE_BTR_SEG_LEAF记录着叶子节点段对应的INODE Entry结构的地址是哪个表空间的哪个页面的哪个偏移量
+
 PAGE_BTR_SEG_TOP记录着非叶子节点段对应的INODE Entry结构的地址是哪个表空间的哪个页面的哪个偏移量
 
 **一个索引只对应两个段，所以只需要在索引的根页面中记录这两个结构**
@@ -232,6 +233,8 @@ InnoDB中还有为存储一些特殊的数据而定义的段，例如回滚段
 ### XDES类型的页
 
 从结构图看出除了第一组外余下的每组的第一个区的首页是XDES类型的页，也看到它和FSP_HDR类型的页的差别就是少了File Space Header部分，也就是除了少了记录表空间整体属性的部分之外，其余的部分是一样的
+
+--------------------------------------------------
 
 ### INODE类型的页
 
