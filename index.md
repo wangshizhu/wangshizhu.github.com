@@ -13,7 +13,7 @@ tagline: Supporting tagline
 
 	- Algorithm-快速排序及其不同演进方案
 
-	- DesignPatterns-迭代器模式s
+	- DesignPatterns-迭代器模式
 
 	- Python-装饰器
 
