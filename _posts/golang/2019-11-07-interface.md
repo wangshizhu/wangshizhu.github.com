@@ -418,6 +418,83 @@ convI2I函数内getitab 函数会根据 interfacetype 和 _type 去**全局的 i
 	输出：
 	
 		object dog [0xc000052440] [main.Dog] {1 wangwang}
+		
+--------------------------------------------------
+### 实现继承、多态、重写
+
+代码如下：
+
+	type IAnimal interface {
+		GrowUp() int
+		Name() string
+	}
+	
+	type AnimalBase struct {
+		Age int
+	}
+	
+	func (this *AnimalBase) Name() string{
+		return "animal"
+	}
+	
+	type Cat struct {
+		AnimalBase
+		Nick string
+	}
+	
+	func (this *Cat) Name() string{
+		return "cat"
+	}
+	
+	func (this *Cat) GrowUp() int {
+		this.Age += 1
+		return this.Age
+	}
+	
+	type Dog struct{
+		AnimalBase
+		Nick string
+	}
+	
+	func (this *Dog) Name() string{
+		return "dog"
+	}
+	
+	func (this *Dog) GrowUp() int{
+		this.Age += 1
+		return this.Age
+	}
+	
+	func WhatName(i IAnimal) string{
+		return i.Name()
+	}
+	
+	func GrowUp(i IAnimal) int {
+		return i.GrowUp()
+	}
+	
+	func main() {
+	
+		pDog := &Dog{}
+		pDog.Age = 1
+	
+		name := WhatName(pDog)
+		fmt.Println(name)
+	
+		pCat := &Cat{}
+		pCat.Age = 1
+		name = WhatName(pCat)
+		fmt.Println(name)
+	}
+	
+输出：
+	
+	dog
+	cat
+	
+同时可以通过嵌入匿名接口或嵌入匿名指针对象来实现继承的做法其实是一种纯虚继承，匿名接口或匿名指针对象起到了像C++虚基类的作用，一种类型的行为描述，继承的只是接口指定的规范，真正的实现在运行的时候才被注入
+
+
 	
 
 	
