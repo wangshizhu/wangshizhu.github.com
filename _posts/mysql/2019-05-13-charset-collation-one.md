@@ -178,7 +178,7 @@ permalink: charset-collation-one
 
 	**character_set_database 和 collation_database 这两个系统变量是只读的，我们不能通过修改这两个变量的值而改变当前数据库的字符集和比较规则**
 
-	**创建表时如果未指定字符集和比较规则则使用服务器级别的字符集和比较规则，例如：`create database character_test;`**
+	**创建数据库时如果未指定字符集和比较规则则使用服务器级别的字符集和比较规则，例如：`create database character_test;`**
 
 ***
 * ### 表级别 ###

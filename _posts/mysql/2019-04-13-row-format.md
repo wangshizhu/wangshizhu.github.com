@@ -6,6 +6,7 @@ tagline: "Supporting tagline"
 tags : [mysql]
 permalink: innodb-row-format-compact
 ---
+[innodb_ruby]:https://github.com/jeremycole/innodb_ruby
 ***
 * ### 测试环境 ###
 	
