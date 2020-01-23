@@ -43,8 +43,8 @@ Buffer Pool的结构可以参考此图：
 	结构图中展示了整个Buffer Pool由两个Buffer Pool Instance组成，每个Buffer Pool Instance称为一个实例，**它们都是独立的，独立的去申请内存空间，独立的管理各种链表**，
 所以在多线程并发访问时并不会相互影响，从而提高并发处理能力。实例个数可以通过配置设置：
 
-	[server]
-	innodb_buffer_pool_instances = 2
+		[server]
+		innodb_buffer_pool_instances = 2
 	
 	同时MySQL规定当innodb_buffer_pool_size的值小于1G的时候设置多个实例是无效的，InnoDB会默认把innodb_buffer_pool_instances 的值修改为1
 	
