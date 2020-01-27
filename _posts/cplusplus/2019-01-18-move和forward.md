@@ -7,6 +7,7 @@ tags : [C++]
 permalink: move&forward
 ---
 [move_constructor]: /move-constructor
+[ref_fold]: /ref-fold
 * * *
 
 * #### 解释 ####
@@ -107,7 +108,7 @@ permalink: move&forward
 			InvokeProcess(std::move(objTest));
 		}
 
-	至于forward怎么知道传入的参数是左值还是右值我们以后在讨论
+	至于forward怎么知道传入的参数是左值还是右值可以参考这篇[文章][ref_fold]
 
 * * *
 * #### std::move和std::forward ####
