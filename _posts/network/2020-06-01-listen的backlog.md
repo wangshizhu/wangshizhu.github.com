@@ -20,7 +20,7 @@ permalink: listen-backlog
 有一篇比较详细的[文章][listen_backlog]，这篇文章给出的解释是：
 
 当一个应用使用listen系统调用让socket进入LISTEN状态时，它需要为该套接字指定一个backlog。backlog通常被描述为连接队列的限制，由于TCP使用的3次握手，
-连接在到达ESTABLISHED状态之前经历中间状态SYN RECEIVED，并且可以由accept系统调用返回到应用程序。这意味着TCP / IP协议栈有两个选择来为LISTEN状态的套接字实现backlog队列：
+连接在到达ESTABLISHED状态之前经历中间状态SYN RECEIVED，并且可以由accept系统调用返回到应用程序。这意味着TCP / IP堆栈有两个选择来为LISTEN状态的套接字实现backlog队列：
 
 * 一种就是两种状态在一个队列
 	
@@ -80,7 +80,7 @@ Linux版本：3.10.0-514.26.2.el7.x86_64
 	tcp        0      0 *.*.*.*:5700       *.*.*.*:29749    ESTABLISHED -                   
 	tcp        0      0 *.*.*.*:5700       *.*.*.*:29751    ESTABLISHED -
 	
-ESTABLISHED状态的连接有4个，可是backlog参数是`--listen_backlog=3`，这所以多一个，是因为内核的源码对ACCEPT队列长度和backlog的判断是类似这样的：
+ESTABLISHED状态的连接有4个，可是backlog参数是`--listen_backlog=3`，之所以多一个，是因为内核的源码对ACCEPT队列长度和backlog的判断是类似这样的：
 
 	if(ACCEPT队列长度 > backlog)
 	{
