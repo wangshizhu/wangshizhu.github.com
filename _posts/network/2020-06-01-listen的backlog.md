@@ -75,10 +75,10 @@ Linux版本：3.10.0-514.26.2.el7.x86_64
 	netstat -alepn|grep 5700
 	
 	tcp        4      0 0.0.0.0:5700            0.0.0.0:*               LISTEN      17353/./test0306    
-	tcp        0      0 *.*.*.*:5700       *.*.*.*:29750    ESTABLISHED -                   
-	tcp        0      0 *.*.*.*:5700       *.*.*.*:29754    ESTABLISHED -                   
-	tcp        0      0 *.*.*.*:5700       *.*.*.*:29749    ESTABLISHED -                   
-	tcp        0      0 *.*.*.*:5700       *.*.*.*:29751    ESTABLISHED -
+	tcp        0      0 *.*.*.*:5700       		*.*.*.*:29750    		ESTABLISHED -                   
+	tcp        0      0 *.*.*.*:5700       		*.*.*.*:29754    		ESTABLISHED -                   
+	tcp        0      0 *.*.*.*:5700       		*.*.*.*:29749    		ESTABLISHED -                   
+	tcp        0      0 *.*.*.*:5700       		*.*.*.*:29751    		ESTABLISHED -
 	
 ESTABLISHED状态的连接有4个，可是backlog参数是`--listen_backlog=3`，之所以多一个，是因为内核的源码对ACCEPT队列长度和backlog的判断是类似这样的：
 
@@ -91,4 +91,67 @@ ESTABLISHED状态的连接有4个，可是backlog参数是`--listen_backlog=3`�
 	...
 	
 所以造成ESTABLISHED状态的连接有4个
+
+### 延伸问题
+--------------------------------------------------
+
+在测试上面问题时，**发现当服务器程序的ACCEPT队列已满时，新客户端连接在服务器程序的连接状态为SYN_RECV，从客户端的角度来看，在接收到第一个SYN / ACK之后，客户端的程序连接状态为ESTABLISHED**，
+客户端认为连接已经建立，先看一下问题的模型：
+
+* 服务器程序并不消费ACCEPT队列
+
+* ACCEPT队列已满
+
+* 新客户端连接发起后，状态为ESTABLISHED
+
+* 新客户端连接发送消息给服务器程序
+
+* 新客户端向服务器发送消息之前服务器程序没有将这个连接的状态设置为ESTABLISHED，即服务器程序达到了最大SYN / ACK重试次数
+
+这个问题在高并发应用中很有可能发生，例如一个单线程服务器程序，服务器程序消费ACCEPT队列的速度比向ACCEPT队列生产速度慢，此时产生堆积，一直到ACCEPT队列已满，
+此时客户端认为连接已经建立，并向服务器发送消息，此时**客户端程序会收到一个RST包，对应linux错误码是ECONNRESET**，这就要看客户端程序的处理了，通常重新发起连接，
+此时服务器程序已将这个连接视之为**已关闭**
+
+**如果在达到最大SYN / ACK重试次数之前，服务器端的应用程序减少了积压（即，消费了来自ACCEPT队列的连接），
+则TCP实现最终将处理重复的ACK之一，从而转换状态。从SYN RECEIVED到ESTABLISHED的连接，并将其添加到ACCEPT队列**。可以通过下面方法查看、设置重试次数：
+	
+	cat /proc/sys/net/ipv4/tcp_synack_retries
+	
+	sysctl -w net.ipv4.tcp_synack_retries=3
+	
+**在未达到最大SYN / ACK重试次数之前或者连接处于ACCEPT队列中，客户端程序可以向服务器发送消息，同时会重传这个消息数据，但是服务器程序不能对消息响应**
+
+**在ACCEPT队列已满并且新连接在未达到最大SYN / ACK重试次数之前，新连接在服务端的连接状态为SYN_RECV**，例如下面的测试：
+
+	netstat -alepn|grep 5700
+	tcp        4      0 0.0.0.0:5700            0.0.0.0:*               LISTEN      0          1574992    19090/./test0306    
+	tcp        0      0 *.*.*.*:5700       		*.*.*.*:12310    		SYN_RECV    0          0          -                   
+	tcp        0      0 *.*.*.*:5700       		*.*.*.*:2189     		SYN_RECV    0          0          -                   
+	tcp        0      0 *.*.*.*:5700       		*.*.*.*:2659     		ESTABLISHED 0          0          -                   
+	tcp        0      0 *.*.*.*:5700       		*.*.*.*:2661     		ESTABLISHED 0          0          -                   
+	tcp        0      0 *.*.*.*:5700       		*.*.*.*:2660     		ESTABLISHED 0          0          -                   
+	tcp        0      0 *.*.*.*:5700       		*.*.*.*:2652     		ESTABLISHED 0          0          -
+
+### SYN队列
+--------------------------------------------------
+
+上面提到了SYN队列，一种说法是每个SYN数据包都会导致向SYN队列添加一个连接（除非该队列已满），**事情并非如此**。原因是以下tcp_v4_conn_request函数中的代码（用于处理SYN数据包） net/ipv4/tcp_ipv4.c：
+
+	/* Accept backlog is full. If we have already queued enough
+	 * of warm entries in syn queue, drop request. It is better than
+	 * clogging syn queue with openreqs with exponentially increasing
+	 * timeout.
+	 */
+	if (sk_acceptq_is_full(sk) && inet_csk_reqsk_queue_young(sk) > 1) {
+			NET_INC_STATS_BH(sock_net(sk), LINUX_MIB_LISTENOVERFLOWS);
+			goto drop;
+	}
+	
+这意味着如果ACCEPT队列已满，则内核将对SYN数据包的接受速率施加限制。如果收到太多SYN数据包，则其中的一些将被丢弃。在这种情况下，取决于客户端重试发送SYN数据包
+
+可以通过如下命令查看、修改SYN队列长度：
+
+	cat /proc/sys/net/ipv4/tcp_max_syn_backlog
+	
+	sysctl -w net.ipv4.tcp_max_syn_backlog=512
 
