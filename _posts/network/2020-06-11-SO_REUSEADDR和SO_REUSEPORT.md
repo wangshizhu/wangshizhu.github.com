@@ -1,10 +1,10 @@
 ---
 layout: second_template
-title: SO_REUSEADDR和SO_REUSEPORT
+title: SO_REUSEADDR
 category: network
 tagline: "Supporting tagline"
 tags : [network]
-permalink: SO_REUSEADDR&SO_REUSEPORT
+permalink: SO_REUSEADDR
 ---
 
 [stack_overflow]:https://stackoverflow.com/questions/14388706/how-do-so-reuseaddr-and-so-reuseport-differ/14388707#14388707
@@ -78,4 +78,101 @@ TCP是面向连接的协议，对于**未绑定**的TCP socket也是如此，它
 
 如果SO_REUSEADDR在bind套接字之前，在该套接字上启用此选项，则该套接字可以成功bind，除非与另一个bind到【源地址、源端口】的**完全相同**的套接字冲突
 
-**SO_REUSEADDR主要改变搜索冲突时处理通配符地址0.0.0.0的方式**
+**SO_REUSEADDR主要改变搜索冲突时处理通配符地址0.0.0.0的方式**。关于更多详细的解释可以参考这篇[文章][stack_overflow]
+
+开启这个socket选项，上面例子的第一个绑定方案由不可以变为可以，如下：
+	
+* 先让socketA bind 0.0.0.0:21
+	
+	socketB **可以**bind 192.168.0.1:21
+	
+	socketC **可以**bind 10.0.0.1:21
+	
+下面从两个角度来解释SO_REUSEADDR：
+
+* 从TCP服务端程序角度来说
+
+	至此，对于服务端程序来说使用此技术，在调用监听listen函数前，是不是可以假设在同一台机器上有多个进程可以用通配地址bind，再使用具体地址bind到相同的源端口，例如：
+
+	1. 启动进程1，设置此选项，bind("0.0.0.0",5700)，监听listen
+
+	2. 启动进程2，设置此选项，bind("192.168.111.128",5700)，监听listen
+
+	**这样是不可以的**，关于linux对此选项有个**非常重要的**例外：**只要服务端程序监听listen TCP 套接字绑定到特定端口，SO_REUSEADDR针对该端口的所有套接字将完全忽略该选项**
+
+	从对SO_REUSEADDR的描述也可以看见这个例外：
+		
+	> 除非有活动的监听套接字绑定到该地址。当监听套接字通过特定端口绑定到INADDR_ANY时，则不可能为任何本地地址绑定到此端口
+
+	言外之意就是，处于监听状态的套接字（并且这个监听套接字是通过通配地址bind的），则不能为任何本地地址绑定到此端口，即使设置了这个选项SO_REUSEADDR，那么，**没有处于监听的套接字，就可以
+	绑定到此端口**，这就是为什么处于TIME_WAIT状态的套接字可以再次bind成功，注意这个解释是对于服务端程序而言的
+
+	在使用CTRL+C杀掉服务器端程序之前，有活动的监听套接字：
+		
+		tcp        0      0 0.0.0.0:5700            0.0.0.0:*               LISTEN      0          1921063    6840/./test0306
+		
+	CTRL+C杀掉服务器端程序后，没有处于活动的监听套接字，所以即使有TIME_WAIT状态的连接也能立刻启动服务端程序
+	
+	这里可能有个问题就是启动服务端程序后，有可能有两个四元组相同的连接存在，在现代 Linux 操作系统下对此进行了一些优化：
+	
+	* 新连接 SYN 告知的初始序列号，一定比 TIME_WAIT 老连接的末序列号大，这样通过序列号就可以区别出新老连接
+	* 优化时开启tcp_timestamps，使得新连接的时间戳比老连接的时间戳大，这样通过时间戳也可以区别出新老连接
+	
+	在这个问题上也可以从应用程序设计上避免，客户端避免指定端口，端口的选择交给系统来选择
+	
+	实际工作中接触的TCP服务器最多，通过上面的分析，**在所有 TCP 服务器程序中，调用 bind 之前请设置 SO_REUSEADDR 套接字选项。这不会产生危害，相反，它会帮助我们在很快时间内重启服务端程序**
+
+* 从TCP客户端程序角度来说
+	
+	从发起TCP连接的客户端角度来说，这篇[文章][socket_in_a_bind]介绍了发起连接的客户端遇到的问题，最后使用这个选项解决了问题。下面列出了几种使用情况：
+	
+	1. 使用通配地址，不同源port，相同【目标ip，目标port】
+		
+		开启SO_REUSEADDR：最多发起64K个连接
+		
+		不开启SO_REUSEADDR：最多发起64K个连接
+		
+	2. 使用通配地址，同一个源port，相同【目标ip，目标port】
+		
+		开启SO_REUSEADDR：可以发起1个连接
+		
+		不开启SO_REUSEADDR：可以发起1个连接
+		
+	3. 使用通配地址，同一个源port，不同【目标ip，目标port】
+		
+		开启SO_REUSEADDR，可以发起这样的连接组合：
+		
+		【使用通配地址、同一个源port、目标ip_1、目标port】
+		
+		【指定本地地址1、同一个源port、目标ip_2、目标port】
+		
+		【指定本地地址2、同一个源port、目标ip_2、目标port】
+		
+		【指定本地地址n、同一个源port、目标ip_2、目标port】
+		
+		开启SO_REUSEADDR，**不可以**发起这样的连接组合：
+			
+		【使用通配地址、同一个源port、目标ip_1、目标port】
+		
+		【指定本地地址1、同一个源port、目标ip_1、目标port】
+		
+		【指定本地地址2、同一个源port、目标ip_1、目标port】
+		
+		【指定本地地址n、同一个源port、目标ip_1、目标port】
+		
+		不开启SO_REUSEADDR，**只可以**发起这样的连接组合：
+		
+		【使用通配地址、同一个源port、目标ip_1、目标port】
+		
+	**上述使用情况中的使用同一个源port，需在发起连接前调用bind函数，如果开启SO_REUSEADDR，需要在调用bind函数前设置**，这个技术称为连接前绑定技术。关于更多连接前绑定技术可以参考这篇[文章][bind_before_connect]
+	
+	**使用连接前绑定技术之前，只有单个连接可以使用单个传出源端口。如果开启SO_REUSEADDR，假设许多连接连接到不同的目标地址，则有可能重用同一源端口**
+	
+### SO_REUSEADDR和tcp_tw_reuse
+--------------------------------------------------
+
+tcp_tw_reuse主要用在连接的**发起方**。TIME_WAIT 状态的连接创建时间超过 1 秒后，新的连接才可以被复用，例如一个服务端程序，它向其他程序发起连接、关闭连接，
+tcp_tw_reuse决定着：当这个服务端程序有大量的TIME_WAIT连接时，这个服务端程序发起连接是不是重用这些TIME_WAIT连接。tcp_tw_reuse通常决定着应用程序运行一段时间后的行为
+
+SO_REUSEADDR 选项用来告诉操作系统内核，如果端口已被占用，但是 TCP 连接状态位于 TIME_WAIT ，可以重用端口。
+如果端口忙，而 TCP 处于其他状态，重用端口时依旧得到EADDRINUSE错误信息。SO_REUSEADDR通常决定着应用程序启动阶段的行为
