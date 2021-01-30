@@ -122,5 +122,77 @@ MySQL客户端在和MySQL服务器进行通信时，要经历如下步骤：
 
 它起到的效果和执行一遍`SET NAMES utf8`是一样的，都会将三个系统变量的值设置成utf8
 
+### 实际开发中的字符集
+--------------------------------------------------
+
+上面提到的：通常客户端所使用的字符集和当前操作系统一致，不同操作系统使用的字符集可能不一样，如下：
+
+- 类Unix系统使用的是utf8
+- Windows使用的是gbk
+
+对于这样的总结并没有什么问题，下面是在实际应用中的总结：
+
+- 在Windows上使用MySQL client连接 Windows上的MySQL
+	
+	使用的是Windows的默认编码，即gbk
+	
+- 在Windows上使用MySQL client连接 Linux上的MySQL
+
+	使用的是Windows的默认编码，即gbk
+	
+- 在Linux上使用MySQL client连接 Linux上的MySQL
+	
+	使用的是Linux的默认编码，即utf8
+	
+- 在Linux上使用MySQL client连接 Windows上的MySQL
+	
+	使用的是Linux的默认编码，即utf8
+	
+进一步总结为：**字符集是依赖于MySQL客户端所在的操作系统**，顺便提一下修改客户端连接权限方法：
+
+- 指定IP
+
+		GRANT ALL PRIVILEGES ON *.* TO 'root'@'*.*.*.*' IDENTIFIED BY 'password' WITH GRANT OPTION;
+	
+		flush privileges;
+		
+- 不限定IP
+	
+		GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY 'password' WITH GRANT OPTION;
+			
+		flush privileges;
+		
+实际开发服务器端程序时遇到如下问题，现列出问题的背景：
+
+1. 表中字段的字符集使用的是utf8
+2. 存储之前游戏客户端应用程序使用utf8进行编码
+3. 返回给游戏客户端应用程序时也使用utf8进行解码
+
+问题：**当使用Mysql Client查看这个字段时出现乱码，不论MySQL Client是在Windows上还是在Linux上**
+
+解决这个问题**最核心的就是先确认服务器端使用MySQL API时默认的字符集是不是utf8**，答案是**当使用MySQL API进行服务器程序开发时字符集默认使用的是Latin1**，整个过程如下：
+
+1. 游戏客户端应用程序使用utf8进行编码，网络传输给服务器端
+2. 服务器端程序使用MySQL API存储数据时会经历上述的过程转换，转换为Latin1，再到表中字段字符集转换，转换为utf8
+3. 当使用MySQL Client查询该字段的值时，假设MySQL Client使用的是utf8，那么就是由表中字段utf8转换为MySQL Client的utf8
+
+出现乱码的原因是**在第2步和第3步，入库前使用Latin1编码，出库到MySQL客户端使用utf8解码**
+
+**所以当开发服务器端程序时创建MySQL实例时，显示的设置字符集：**
+
+	MYSQL mysql;
+	 
+	mysql_init(&mysql);
+	if (!mysql_real_connect(&mysql,"host","user","passwd","database",0,NULL,0))
+	{
+	    fprintf(stderr, "Failed to connect to database: Error: %s\n",
+	          mysql_error(&mysql));
+	}
+	 
+	if (!mysql_set_character_set(&mysql, "utf8"))
+	{
+	    printf("New client character set: %s\n",
+	           mysql_character_set_name(&mysql));
+	}
 
 
