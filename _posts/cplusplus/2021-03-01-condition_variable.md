@@ -156,5 +156,4 @@ LOG系统设想：
 关于无锁队列Lock-Free queue设计思想可以参考Maged M. Michael 和 Michael L. Scott 1996 年发表的[论文][scott]
 
 无锁队列的实现有boost库实现的boost::lockfree::queue，有Intel的TBB，还有C++大神Cameron的moodycamel::ConcurrentQueue，
-关于这些无锁队列的测试还有实现可以参考大神Cameron的这篇[文章][Cameron_blog]，文章里介绍了moodycamel::ConcurrentQueue的实现和其他无锁队列的测试数据对比，
-号称世界上最快的LOG库spdlog也使用了moodycamel::ConcurrentQueue
+关于这些无锁队列的测试还有实现可以参考大神Cameron的这篇[文章][Cameron_blog]，文章里介绍了moodycamel::ConcurrentQueue的实现和其他无锁队列的测试数据对比
