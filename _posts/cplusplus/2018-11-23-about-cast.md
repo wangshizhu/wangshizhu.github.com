@@ -220,111 +220,100 @@ type-id 必须是一个**指针**或**引用**到以前已定义的类类型的�
 
 如果 type-id 不是 void*，则做运行时进行检查以确定是否由 expression 指向的对象可以转换为由 type-id指向的类型。如下代码：
 
-`
-void DynamicUpCast(Texi* pTexi)
-{
-	Car* pCar = dynamic_cast<Car*>(pTexi);
-	if (nullptr == pCar)
+	void DynamicUpCast(Texi* pTexi)
 	{
-		cout << "cast to pCar faild" << endl;
+		Car* pCar = dynamic_cast<Car*>(pTexi);
+		if (nullptr == pCar)
+		{
+			cout << "cast to pCar faild" << endl;
+		}
+		else
+		{
+			cout << "cast to pCar success" << endl;
+		}
+		Vehicle* pVehicle = dynamic_cast<Vehicle*>(pTexi);
+		if (nullptr == pVehicle)
+		{
+			cout << "cast to pVehicle faild" << endl;
+		}
+		else
+		{
+			cout << "cast to pVehicle success" << endl;
+		}
 	}
-	else
 	{
-		cout << "cast to pCar success" << endl;
+		Texi* pTexi = new Texi;
+		DynamicUpCast(pTexi);
 	}
-	Vehicle* pVehicle = dynamic_cast<Vehicle*>(pTexi);
-	if (nullptr == pVehicle)
-	{
-		cout << "cast to pVehicle faild" << endl;
-	}
-	else
-	{
-		cout << "cast to pVehicle success" << endl;
-	}
-}
-{
-	Texi* pTexi = new Texi;
-	DynamicUpCast(pTexi);
-}
-`
 
 输出：
 
-`
-cast to pCar success
-cast to pVehicle success
-`
+	cast to pCar success
+	cast to pVehicle success
 
 在多继承类层次结构中，子类转换到基类（跨父类时）会发生转换不明确的错误，例如一下示例中Moto转换到Vehicle时，
 当使用dynamic_cast进行上行转换时，虽然能编译通过，但转换后指针为空；
 当使用static_cast进行上行转换时，编译不通过，发生转换不明确的错误。
 
-`
-class Bicycle : public Vehicle
-{
-public:
-	Bicycle()
+	class Bicycle : public Vehicle
 	{
-	}
-};
-class Electrombile : public Vehicle
-{
-public:
-	Electrombile()
+	public:
+		Bicycle()
+		{
+		}
+	};
+	class Electrombile : public Vehicle
 	{
-	}
-};
-class Moto : public Electrombile, public Bicycle
-{
-public:
-	Moto()
+	public:
+		Electrombile()
+		{
+		}
+	};
+	class Moto : public Electrombile, public Bicycle
 	{
-	}
-};
-{
-	Moto* pMoto = new Moto;
-	//Vehicle* pVehicle = static_cast<Vehicle*>(pMoto);
-	Vehicle* pVehicle = dynamic_cast<Vehicle*>(pMoto);
-	if (nullptr == pVehicle)
+	public:
+		Moto()
+		{
+		}
+	};
 	{
-		cout <<"moto-vehicle faild"<<endl;
+		Moto* pMoto = new Moto;
+		//Vehicle* pVehicle = static_cast<Vehicle*>(pMoto);
+		Vehicle* pVehicle = dynamic_cast<Vehicle*>(pMoto);
+		if (nullptr == pVehicle)
+		{
+			cout <<"moto-vehicle faild"<<endl;
+		}
 	}
-}
-`
 
 多继承的正确转换：
 
-`
-{
-	Moto* pMoto = new Moto;
-	Bicycle* pBicycle = static_cast<Bicycle*>(pMoto);
-	Vehicle* pVehicle = static_cast<Vehicle*>(pBicycle);
-}
-`
+	{
+		Moto* pMoto = new Moto;
+		Bicycle* pBicycle = static_cast<Bicycle*>(pMoto);
+		Vehicle* pVehicle = static_cast<Vehicle*>(pBicycle);
+	}
 
 **dynamic_cast用于相互转换**，只要被转换对象是相互转换对象的子类，例如下面示例，
 Moto是Bicycle、Electrombile的子类，我们尝试这样的转换，Moto -- Bicycle -- Electrombile
 
-`
-{
-	Moto* pMoto = new Moto;
-	Bicycle* pBicycle = static_cast<Bicycle*>(pMoto);
-	Electrombile* pElectrombile = dynamic_cast<Electrombile*>(pBicycle);
-	if (nullptr == pElectrombile)
 	{
-		cout << "cross cast faild" << endl;
+		Moto* pMoto = new Moto;
+		Bicycle* pBicycle = static_cast<Bicycle*>(pMoto);
+		Electrombile* pElectrombile = dynamic_cast<Electrombile*>(pBicycle);
+		if (nullptr == pElectrombile)
+		{
+			cout << "cross cast faild" << endl;
+		}
+		else
+		{
+			cout << "cross cast success" << endl;
+		}
 	}
-	else
-	{
-		cout << "cross cast success" << endl;
-	}
-}
-`
+
 输出:
 
-`
-cross cast success
-`
+	cross cast success
 
 下行转换：
 
@@ -333,27 +322,24 @@ cross cast success
 
 当下行转换为引用时，如果失败会抛出一个继承自exception的bad_cast异常类。
 
-`
-void DynamicDownCastRef(Vehicle& objVehicle)
-{
-	try
+	void DynamicDownCastRef(Vehicle& objVehicle)
 	{
-		Texi& objTexi = dynamic_cast<Texi&>(objVehicle);
-		cout << "down-cast to objTexi as ref success" << endl;
+		try
+		{
+			Texi& objTexi = dynamic_cast<Texi&>(objVehicle);
+			cout << "down-cast to objTexi as ref success" << endl;
+		}
+		catch (std::bad_cast objBadCastException)
+		{
+			cout << "down-cast to objTexi as ref faild" << endl;
+		}
 	}
-	catch (std::bad_cast objBadCastException)
 	{
-		cout << "down-cast to objTexi as ref faild" << endl;
+		Vehicle objVehicle;
+		DynamicDownCastRef(objVehicle);
 	}
-}
-{
-	Vehicle objVehicle;
-	DynamicDownCastRef(objVehicle);
-}
-`
+
 
 输出：
 
-`
-down-cast to objTexi as ref faild
-`
+	down-cast to objTexi as ref faild

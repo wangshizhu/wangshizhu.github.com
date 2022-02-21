@@ -10,17 +10,14 @@ permalink: singleton
 [stack]:https://stackoverflow.com/questions/34457432/c11-singleton-static-variable-is-thread-safe-why
 [OSDEV]:https://wiki.osdev.org/C++
 
+单例模式：确保一个类有且仅有一个实例
+
 ### 测试环境
 --------------------------------------------------
 	
 vs2015
 
 win10 64位
-
-### 解释
---------------------------------------------------
-
-确保一个类有且仅有一个实例
 
 ### 代码示例
 --------------------------------------------------
@@ -156,10 +153,9 @@ win10 64位
 	class CSingleton
 	{
 	public:
-		template<typename... Args>
-		static T* GetInstance(Args&&... args)
+		static T* GetInstance()
 		{
-			static T instance(std::forward<Args>(args)...);
+			static T instance();
 			return &instance;
 		}
 	
