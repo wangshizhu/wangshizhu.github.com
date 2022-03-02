@@ -147,7 +147,7 @@ std::enable_shared_from_this定义了一个成员函数来创建指向当前对�
 
 shared_from_this内部实现是，它首先寻找当前对象的控制块，然后创建一个新的	std::shared_ptr来引用那个控制块。
 **这样的设计依赖一个前提，就是当前的对象必须有一个与之相关的控制块。**为了让这种情况成真，
-事先必须有一个std::shared_ptr	指向了当前的对象(比如说在这个调用shared_from_this的成员函数的外面)，
+事先必须有一个std::shared_ptr	指向了当前的对象(例如在这个调用shared_from_this的成员函数的外面)，
 如果这样的std::shared_ptr不存在(即，当前的对象没有相关的控制块)，虽然shared_from_this通常会抛出异常，产生的行为仍是未定义的。
 
 **为了阻止用户在没有一个std::shared_ptr指向该对象之前，使用一个里面调用shared_from_this的成员函数，
@@ -168,7 +168,7 @@ shared_from_this内部实现是，它首先寻找当前对象的控制块，然�
 	虽然引用计数可以保证原子性，但是对于std::shared_ptr对象内部原生指针、引用计数指针的操作（swap、赋值等）并不能保证一个指令完成，而分成了多个语句完成，
 	以赋值构造函数为例，假设有线程共享shared_ptr对象g，线程1局部变量shared_ptr对象n，线程2局部变量shared_ptr对象x：
 	
-		// 	线程共享shared_ptr对象g
+		// 线程共享shared_ptr对象g
 		std::shared_ptr<Foo> g(new Foo);
 		
 		// 线程1局部变量shared_ptr对象n
